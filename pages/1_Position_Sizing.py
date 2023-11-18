@@ -76,3 +76,50 @@ if risk_type == "Percentage of Account":
 
 # Call the function to display results at the end
 display_results()
+
+
+st.divider()
+
+st.header("Pyramid Postion Sizing")
+
+
+# Inputs for pyramid position sizing
+col5, col6, col7 = st.columns(3)
+
+with col5:
+    average_price_paid = st.number_input("Average Price Paid ($):", min_value=0.0, format="%.2f", key="average_price_paid")
+
+with col6:
+    current_price = st.number_input("Current Price ($):", min_value=0.0, format="%.2f", key="current_price")
+
+with col7:
+    distance_to_stop = st.number_input("Distance to Stop ($):", min_value=0.0, format="%.2f", key="distance_to_stop")
+
+# Assuming 'current_shares' is the number of shares currently held, from previous calculations
+current_shares = calculate_shares(risk_amount, stop_loss, rounding_method)
+
+# Calculate and display the number of additional shares to buy for pyramid
+def calculate_additional_shares():
+    # Calculating the current profit or loss in the position
+    profit_loss_per_share = current_price - average_price_paid
+    total_profit_loss = profit_loss_per_share * current_shares
+
+    # Adjusting risk based on current profit or loss
+    adjusted_risk_amount = risk_amount + total_profit_loss
+
+    # New risk per share based on current price and new stop loss (current price - distance to stop)
+    new_stop_loss = current_price - distance_to_stop
+    new_risk_per_share = current_price - new_stop_loss
+
+    # Calculate the number of additional shares that can be bought with the adjusted risk
+    additional_shares = 0
+    if new_risk_per_share > 0:
+        additional_shares = adjusted_risk_amount / new_risk_per_share
+
+    return max(0, additional_shares)  # Ensure no negative values
+
+
+if st.button("Calculate Additional Shares"):
+    additional_shares = calculate_additional_shares()
+    formatted_additional_shares = "{:,}".format(int(additional_shares))
+    st.markdown(f"<h4 style='text-align: left; color: white;'>You should add <span style='font-size: 1.2em;'>{formatted_additional_shares}</span> more shares.</h4>", unsafe_allow_html=True)
