@@ -48,9 +48,9 @@ rounding_method = "No Rounding"  # Default value
 if risk_type == "Percentage of Account":
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        account_size = st.number_input("Enter the size of your account ($):", min_value=0.0, value=5000.00, step=1000.0, format="%.2f", key="account_size")
+        account_size = st.number_input("Account Size ($):", min_value=0.0, value=5000.00, step=1000.0, format="%.2f", key="account_size")
     with col2:
-        risk_percentage = st.slider("Select your Risk (R) percentage:", 
+        risk_percentage = st.slider("Select your Risk (R) %:", 
                                     min_value=0.1, 
                                     max_value=3.0, 
                                     value=1.0, 
@@ -60,14 +60,14 @@ if risk_type == "Percentage of Account":
 else:
     col2, col3, col4 = st.columns(3)
     with col2:
-        risk_amount = st.number_input("Enter your fixed Risk amount ($):", min_value=0, value=100, step=1, key="fixed_risk_amount")
+        risk_amount = st.number_input("Risk Amount ($):", min_value=0, value=100, step=1, key="fixed_risk_amount")
 
 with col3:
-    stop_loss = st.number_input("Enter your Stop Loss value ($):", min_value=0.01, format="%.2f", key="stop_loss")
+    stop_loss = st.number_input("Stop Loss Distance ($):", min_value=0.01, format="%.2f", key="stop_loss")
 
 with col4:
     rounding_options = ["No Rounding", "Round Down", "Round Up", "Round to nearest 10", "Round to nearest 50", "Round to nearest 100"]
-    rounding_method = st.selectbox("Choose your rounding method:", rounding_options, key="rounding_method")
+    rounding_method = st.selectbox("Rounding Method:", rounding_options, key="rounding_method")
 
 # Show R size in a styled manner if Percentage of Account is selected
 if risk_type == "Percentage of Account":
