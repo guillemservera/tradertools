@@ -5,11 +5,35 @@ import re
 import base64
 from io import StringIO
 
+
 st.set_page_config(
-    page_title="Tradervue Fix | Tradertools",
+    page_title="Tradervue Fixer · Tradertools",
     page_icon="⚙️",
     layout="wide"  # Set the layout to wide
 )
+
+def add_logo():
+    st.markdown(
+        """
+        <style>
+            [data-testid="stSidebarNav"]::before {
+            content: "tradertools";
+            display: block;
+            font-weight: bold; /* Makes the font bold */
+            margin-left: 25px;
+            margin-top: 0px;
+            margin-botton: 0px;
+            font-size: 2em;
+            position: relative;
+            top: 40px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+add_logo()
+
 # Constants for the fees
 FINRA_TAF_RATE = Decimal('0.000145')
 FINRA_TAF_CAP = Decimal('7.27')
@@ -118,8 +142,14 @@ def get_table_download_link_txt(results):
     return href
 
 
-st.header("Tradervue Fix")
-st.subheader("Correct Executions and Add Broker Fees & Commissions")
+# Main section for initial position sizing
+st.markdown("""
+    ## Tradervue Trade Import Fixer
+    This tool is designed to resolve common problems encountered when importing brokerage trade data into Tradervue. 
+    Simply import or paste your data here, and the tool will generate a "Generic Import Format" suitable for Tradervue. 
+    It will automatically correct known issues and include Fees & Commissions in the trade executions.
+""")
+
 
 st.divider()
 
