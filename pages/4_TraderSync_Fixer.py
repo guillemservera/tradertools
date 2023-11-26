@@ -1,4 +1,3 @@
-
 import streamlit as st
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_UP
@@ -8,7 +7,7 @@ from io import StringIO
 
 
 st.set_page_config(
-    page_title="Tradervue Fixer · Tradertools",
+    page_title="TraderSync Fixer · Tradertools",
     page_icon="⚙️",
     layout="wide"  # Set the layout to wide
 )
@@ -66,18 +65,18 @@ def calculate_transaction_fee(quantity, price, side):
     return total_fee
 
 def parse_trade_line(line):
-    # Ajustamos la expresión regular para capturar tanto "Sell Short" como "Buy to cover"
     match = re.search(
         r'(\d{2}/\d{2}/\d{2})\s+(\d{2}:\d{2})\s+(AM|PM)\s+ET\s+(Buy(?: to cover)?|Sell(?: Short)?)\s+(\d+)\s+([A-Z]+)\s+Executed\s+@\s+\$(\d+\.?\d*)', line
     )
     if match:
+        date_ymd = datetime.strptime(match.group(1), '%m/%d/%y').strftime('%m/%d/%Y')
         time_24h = datetime.strptime(
             f"{match.group(1)} {match.group(2)} {match.group(3)}", '%m/%d/%y %I:%M %p'
         ).time()
-        side = "Buy" if "Buy" in match.group(4) else "Sell"  # Usamos "Buy" o "Sell" independientemente de si es corto o no
+        side = "Buy" if "Buy" in match.group(4) else "Sell"
         price = Decimal(match.group(7))
         return {
-            'date': match.group(1),
+            'date': date_ymd,
             'time': time_24h,
             'side': side,
             'quantity': int(match.group(5)),
@@ -87,9 +86,11 @@ def parse_trade_line(line):
     else:
         return None
 
+# Resto del código...
+
+
 def format_trade(trade):
     trans_fee = calculate_transaction_fee(trade['quantity'], trade['price'], trade['side'])
-    # Format the time as a string again.
     time_str = trade['time'].strftime('%H:%M:%S')
     return ','.join([
         trade['date'],
@@ -98,10 +99,9 @@ def format_trade(trade):
         str(trade['quantity']),
         str(trade['price']),
         trade['side'],
-        '0.00',  # Commission is always 0.00 as per the requirement
-        str(trans_fee)  # Transaction Fee instead of Commission
+        '0.00',  # Comisión siempre es 0.00
+        str(trans_fee)  # Tarifa de transacción
     ])
-
 
 def main(file_obj):
     trades = []
@@ -128,26 +128,25 @@ def main(file_obj):
 
 def display_results_and_download_button(results, key):
     if results:
-        header = "Date,Time,Symbol,Quantity,Price,Side,Commission,TransFee"
+        header = "Date,Time,Symbol,Quantity,Price,Buy/Sell,Commission,Fee"
         result_text = '\n'.join([header] + results)
         st.text_area("Results", result_text, height=300, key=key)
-        st.markdown(get_table_download_link_txt(results), unsafe_allow_html=True)
+        st.markdown(get_table_download_link_csv([header] + results), unsafe_allow_html=True)
 
-
-def get_table_download_link_txt(results):
+def get_table_download_link_csv(results):
     csv = '\n'.join(results).encode('utf-8')
     b64 = base64.b64encode(csv).decode()
-    href = f'<a href="data:file/txt;base64,{b64}" download="tradervue_import.txt">Download TXT file</a>'
+    href = f'<a href="data:file/csv;base64,{b64}" download="tradersync_import.csv">Download CSV file</a>'
     return href
 
 
+# Main section for initial position sizing
 st.markdown("""
-    ## Tradervue Trade Import Fixer
-    This tool is designed to resolve common problems encountered when importing brokerage trade data into Tradervue. 
-    Simply import or paste your data here, and the tool will generate a "Generic Import Format" suitable for Tradervue. 
-    It will automatically correct known issues and include Fees & Commissions in the trade executions.
+    ## TraderSync Trade Import Formatter
+    This tool is designed to format and adapt brokerage trade data for import into TraderSync. 
+    Simply import or paste your data here, and the tool will convert it into the "Generic Import" required by TraderSync. 
+    It will format the data correctly, including the date, time, symbol, quantity, price, side (buy/sell), and calculate fees, ensuring a seamless import process.
 """)
-
 
 st.divider()
 
@@ -159,6 +158,7 @@ st.subheader("Upload your text file with Alerts")
 uploaded_file = st.file_uploader("Choose a file", type=['txt'])
 if uploaded_file is not None:
     results = main(uploaded_file)
+    # Pass a unique key for the uploaded file's results
     display_results_and_download_button(results, key="uploaded_file_results_text_area")
 
 st.markdown("---")
@@ -169,4 +169,5 @@ if apply_button and trade_data:
     from io import StringIO
     trade_data_file = StringIO(trade_data)
     results = main(trade_data_file)
+    # Pass a unique key for the pasted data's results
     display_results_and_download_button(results, key="pasted_data_results_text_area")
