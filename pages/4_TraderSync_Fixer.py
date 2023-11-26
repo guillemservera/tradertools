@@ -142,7 +142,7 @@ def get_table_download_link_csv(results):
 
 # Main section for initial position sizing
 st.markdown("""
-    ## TraderSync Trade Import Formatter
+    ## TraderSync Trade Import Fixer
     This tool is designed to format and adapt brokerage trade data for import into TraderSync. 
     Simply import or paste your data here, and the tool will convert it into the "Generic Import" required by TraderSync. 
     It will format the data correctly, including the date, time, symbol, quantity, price, side (buy/sell), and calculate fees, ensuring a seamless import process.
