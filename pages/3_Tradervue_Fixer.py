@@ -1,4 +1,3 @@
-
 import streamlit as st
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_UP
@@ -104,8 +103,7 @@ def format_trade(trade):
 
 
 def main(file_obj):
-    trades = []
-    trade_times = {}
+    trades = {}
     formatted_trades = []
 
     trade_lines = [line.decode('utf-8') if isinstance(line, bytes) else line for line in file_obj.readlines()]
@@ -114,14 +112,16 @@ def main(file_obj):
         if 'Cancelled' not in line and 'Rejected' not in line:
             trade = parse_trade_line(line)
             if trade:
-                trade_key = (trade['date'], trade['time'])
-                if trade_key in trade_times:
-                    previous_trade_index = trade_times[trade_key]
-                    trades[previous_trade_index]['time'] = (datetime.combine(datetime.today(), trades[previous_trade_index]['time']) + timedelta(seconds=1)).time()
-                trade_times[trade_key] = len(trades)
-                trades.append(trade)
-    
-    for trade in trades:
+                # Creamos una clave única basada en la fecha, hora, símbolo, precio y lado de la transacción
+                trade_key = (trade['date'], trade['time'], trade['symbol'], trade['price'], trade['side'])
+                
+                # Si la clave existe, agregamos la cantidad a la ejecución existente
+                if trade_key in trades:
+                    trades[trade_key]['quantity'] += trade['quantity']
+                else:
+                    trades[trade_key] = trade
+
+    for trade in trades.values():
         formatted_trades.append(format_trade(trade))
     
     return formatted_trades
