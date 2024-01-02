@@ -4,6 +4,7 @@ from decimal import Decimal, ROUND_UP
 import re
 import base64
 from io import StringIO
+import pandas as pd
 
 
 st.set_page_config(
@@ -50,22 +51,22 @@ def calculate_sec_fee(quantity, price):
     return fee
 
 def calculate_transaction_fee(quantity, price, side):
-    # Calculate FINRA TAF for both buy and sell
+    # La tarifa FINRA TAF se aplica tanto a compras como a ventas
     finra_taf_fee = calculate_finra_taf(quantity)
 
-    # Initialize SEC fee to 0
+    # Inicializar la tarifa SEC a 0
     sec_fee = Decimal('0')
 
-    # Calculate SEC fee only for sells
-    if side == 'Sell':
+    # Aplicar la tarifa SEC solo para ventas (Sell y Short)
+    if side in ['Sell', 'Short']:
         sec_fee = calculate_sec_fee(quantity, price)
 
-    # The total transaction fee is the sum of both fees
-    total_fee = finra_taf_fee + sec_fee
-    return total_fee
+    # La tarifa total de la transacción es la suma de ambas tarifas
+    return finra_taf_fee + sec_fee
+
 
 def parse_trade_line(line):
-    # Ajustamos la expresión regular para capturar tanto "Sell Short" como "Buy to cover"
+    # Ajustamos la expresión regular para capturar "Sell Short", "Buy to cover", además de "Buy" y "Sell"
     match = re.search(
         r'(\d{2}/\d{2}/\d{2})\s+(\d{2}:\d{2})\s+(AM|PM)\s+ET\s+(Buy(?: to cover)?|Sell(?: Short)?)\s+(\d+)\s+([A-Z]+)\s+Executed\s+@\s+\$(\d+\.?\d*)', line
     )
@@ -73,7 +74,15 @@ def parse_trade_line(line):
         time_24h = datetime.strptime(
             f"{match.group(1)} {match.group(2)} {match.group(3)}", '%m/%d/%y %I:%M %p'
         ).time()
-        side = "Buy" if "Buy" in match.group(4) else "Sell"  # Usamos "Buy" o "Sell" independientemente de si es corto o no
+
+        # Cambiamos la lógica aquí para asignar correctamente "Short", "Cover", "Buy" o "Sell"
+        if "Sell Short" in match.group(4):
+            side = "Short"
+        elif "Buy to cover" in match.group(4):
+            side = "Cover"
+        else:
+            side = match.group(4)  # Será "Buy" o "Sell"
+
         price = Decimal(match.group(7))
         return {
             'date': match.group(1),
@@ -101,6 +110,67 @@ def format_trade(trade):
         str(trans_fee)  # Transaction Fee instead of Commission
     ])
 
+def process_power_etrade_csv(file_obj):
+    # Leer el archivo CSV, omitiendo la primera fila que es un encabezado
+    df = pd.read_csv(file_obj, skiprows=1)
+
+    # Procesar cada fila
+    processed_trades = []
+    for _, row in df.iterrows():
+        processed_trade = process_power_etrade_trade(row)
+        if processed_trade:
+            processed_trades.append(processed_trade)
+    return processed_trades
+
+def process_power_etrade_trade(row):
+    # Extraer los campos relevantes
+    symbol = row['Symbol']
+    status = row['Status']
+    fill_info = row['Fill']
+    description = row['Description']
+    time_str = row['Time']
+
+    # Ignorar las filas sin información de "Fill"
+    if fill_info == '--':
+        return None
+
+    # Extraer cantidad y precio
+    quantity_str, price_str = fill_info.split('@')
+    quantity = Decimal(re.search(r'(\d+)', quantity_str).group(1))
+    price = Decimal(price_str.strip()) if '@' in fill_info else Decimal('0.00')
+
+    # Determinar el tipo de operación (Side)
+    if "Sell" in description and "to Open" in description:
+        side = "Short"
+    elif "Buy" in description and "to Close" in description:
+        side = "Cover"
+    elif "Buy" in description and "to Open" in description:
+        side = "Buy"
+    elif "Sell" in description and "to Close" in description:
+        side = "Sell"
+    else:
+        side = 'Unknown'
+
+    # Extraer fecha y hora
+    date = datetime.strptime(time_str.split(',')[0], '%m/%d/%Y').date()
+    time = datetime.strptime(time_str.split(',')[1].strip(), '%I:%M:%S %p').time()
+
+    # Calcular tarifas
+    trans_fee = calculate_transaction_fee(quantity, price, side)
+
+    # Formatear la operación al estilo de Tradervue
+    trade_format = ','.join([
+        date.strftime('%m/%d/%Y'),
+        time.strftime('%H:%M:%S'),
+        symbol,
+        str(quantity),
+        str(price),
+        side,
+        '0.00',  # Comisión siempre es 0.00
+        str(trans_fee)  # Tarifa de transacción
+    ])
+    return trade_format
+
 
 def main(file_obj):
     trades = {}
@@ -126,18 +196,21 @@ def main(file_obj):
     
     return formatted_trades
 
-def display_results_and_download_button(results, key):
+def display_results_and_download_button(results, key, filename="tradervue_generic_import.txt"):
     if results:
         header = "Date,Time,Symbol,Quantity,Price,Side,Commission,TransFee"
         result_text = '\n'.join([header] + results)
         st.text_area("Results", result_text, height=300, key=key)
-        st.markdown(get_table_download_link_txt(results), unsafe_allow_html=True)
+        b64 = base64.b64encode(result_text.encode()).decode()
+        href = f'<a href="data:file/txt;base64,{b64}" download="{filename}">Download TXT file</a>'
+        st.markdown(href, unsafe_allow_html=True)
+
 
 
 def get_table_download_link_txt(results):
     csv = '\n'.join(results).encode('utf-8')
     b64 = base64.b64encode(csv).decode()
-    href = f'<a href="data:file/txt;base64,{b64}" download="tradervue_import.txt">Download TXT file</a>'
+    href = f'<a href="data:file/txt;base64,{b64}" download="tradervue_generic_import.txt">Download TXT file</a>'
     return href
 
 
@@ -151,22 +224,33 @@ st.markdown("""
 
 st.divider()
 
-broker = st.selectbox("Choose your broker", ["E*Trade Web Alerts"], index=0)
 
+# Selector de bróker actualizado con las dos opciones
+broker_options = ["E*Trade Web Alerts", "Power E*Trade Web App"]
+broker = st.selectbox("Choose your broker", broker_options, index=0)
 
-st.markdown("---")
-st.subheader("Upload your text file with Alerts")
-uploaded_file = st.file_uploader("Choose a file", type=['txt'])
-if uploaded_file is not None:
-    results = main(uploaded_file)
-    display_results_and_download_button(results, key="uploaded_file_results_text_area")
+# Condición para mostrar diferentes interfaces según el bróker seleccionado
+if broker == "E*Trade Web Alerts":
+    # La interfaz actual para E*Trade Web Alerts
+    st.subheader("Upload your text file with Alerts")
+    uploaded_file = st.file_uploader("Choose a file", type=['txt'])
+    if uploaded_file is not None:
+        results = main(uploaded_file)
+        display_results_and_download_button(results, key="uploaded_file_results_text_area")
 
-st.markdown("---")
-st.subheader("Or paste your Alerts Text here")
-trade_data = st.text_area("Paste the alerts", height=300, key="trade_data_text_area")
-apply_button = st.button('Apply pasted data')
-if apply_button and trade_data:
-    from io import StringIO
-    trade_data_file = StringIO(trade_data)
-    results = main(trade_data_file)
-    display_results_and_download_button(results, key="pasted_data_results_text_area")
+    st.markdown("---")
+    st.subheader("Or paste your Alerts Text here")
+    trade_data = st.text_area("Paste the alerts", height=300, key="trade_data_text_area")
+    apply_button = st.button('Apply pasted data')
+    if apply_button and trade_data:
+        from io import StringIO
+        trade_data_file = StringIO(trade_data)
+        results = main(trade_data_file)
+        display_results_and_download_button(results, key="pasted_data_results_text_area")
+
+if broker == "Power E*Trade Web App":
+    st.subheader("Upload your Power E*Trade CSV")
+    uploaded_file = st.file_uploader("Choose a CSV file", type=['csv'])
+    if uploaded_file is not None:
+        results = process_power_etrade_csv(uploaded_file)
+        display_results_and_download_button(results, key="power_etrade_results_text_area")
