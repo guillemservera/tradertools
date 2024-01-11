@@ -8,7 +8,7 @@ import pandas as pd
 
 
 st.set_page_config(
-    page_title="Tradervue Fixer · Tradertools",
+    page_title="Tradervue Helper · Tradertools",
     page_icon="⚙️",
     layout="wide"  # Set the layout to wide
 )
@@ -68,7 +68,7 @@ def calculate_transaction_fee(quantity, price, side):
 def parse_trade_line(line):
     # Ajustamos la expresión regular para capturar "Sell Short", "Buy to cover", además de "Buy" y "Sell"
     match = re.search(
-        r'(\d{2}/\d{2}/\d{2})\s+(\d{2}:\d{2})\s+(AM|PM)\s+ET\s+(Buy(?: to cover)?|Sell(?: Short)?)\s+(\d+)\s+([A-Z]+)\s+Executed\s+@\s+\$(\d+\.?\d*)', line
+        r'(\d{2}/\d{2}/\d{2})\s+(\d{2}:\d{2})\s+(AM|PM)\s+ET\s+(Buy(?: to cover)?|Sell(?: Short)?)\s+(\d+)\s+([A-Z]+)\s+(?:Executed\s+)?@\s+\$(\d+\.?\d*)\s*(?:Executed)?', line
     )
     if match:
         time_24h = datetime.strptime(
@@ -215,7 +215,7 @@ def get_table_download_link_txt(results):
 
 
 st.markdown("""
-    ## Tradervue Trade Import Fixer
+    ## Tradervue Trade Import Helper
     This tool is designed to resolve common problems encountered when importing brokerage trade data into Tradervue. 
     Simply import or paste your data here, and the tool will generate a "Generic Import Format" suitable for Tradervue. 
     It will automatically correct known issues and include Fees & Commissions in the trade executions.
