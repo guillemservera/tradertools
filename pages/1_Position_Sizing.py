@@ -86,7 +86,7 @@ st.markdown("#####")
 if risk_type == "Percentage of Account":
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        account_size = st.number_input("Account Size ($):", min_value=0.0, value=10000.00, step=1000.0, format="%.2f", key="account_size")
+        account_size = st.number_input("Account Size ($):", min_value=0.0, value=2000.00, step=1000.0, format="%.2f", key="account_size")
     with col2:
         risk_percentage = st.number_input("Select your Risk (%):", min_value=0.05, max_value=3.0, value=1.0, step=0.05, format="%.2f", key="risk_percentage")
         risk_amount = account_size * (risk_percentage / 100)
