@@ -99,7 +99,7 @@ with col3:
     stop_loss_price = st.number_input("Stop Loss Price ($):", min_value=0.01, value=1.0, format="%.2f", key="stop_loss_price")
 
 with col4:
-    buy_price = st.number_input("Entry Price ($):", min_value=0.01, value=1, format="%.2f", key="buy_price")
+    buy_price = st.number_input("Entry Price ($):", min_value=0.01, value=1.05, format="%.2f", key="buy_price")
     
 
 
