@@ -83,7 +83,7 @@ def plot_monte_carlo_simulations(simulations_results, expected_equity_curve):
     ax.spines['right'].set_color('grey')
     ax.spines['left'].set_color('grey')
     ax.legend(loc='upper left', frameon=False)
-    fig.text(0.95, 0.01, 'tradertools.streamlit.app | by @guillemservera', ha='right', va='bottom', fontsize=10, color='white', alpha=0.5)
+    fig.text(0.95, 0.01, 'tradertools.streamlit.app', ha='right', va='bottom', fontsize=10, color='white', alpha=0.5)
 
     # Display the plot in Streamlit
     st.pyplot(fig)
