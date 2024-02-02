@@ -61,7 +61,7 @@ def display_initial_shares():
 st.markdown("""
             ## Position Sizing Helper
             This tool assists you in calculating the ideal number of shares to buy based on 
-            your individual risk tolerance and strategy making it easy to manage risk using R multiples or Risk units.
+            your individual risk tolerance and strategy making it easy to manage risk using Risk units (R).
             """)
 
 st.divider()
