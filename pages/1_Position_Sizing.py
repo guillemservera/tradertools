@@ -60,19 +60,27 @@ def calculate_shares(risk_amount, entry_price, stop_loss_price, rounding_method,
 
 # Function to display the initial number of shares and the real risk
 def display_initial_shares():
-    real_shares = calculate_shares(risk_amount, buy_price, stop_loss_price, rounding_method, "Long")
-    stop_loss_distance = abs(buy_price - stop_loss_price)
-    real_risk = real_shares * stop_loss_distance
-    formatted_shares = "{:,}".format(int(real_shares))
-    formatted_real_risk = "${:,.2f}".format(real_risk)  # Formatting real risk for display
-    st.markdown(f"<h3 style='text-align: left; color: #56b0f0;'>You should buy <span style='font-size: 1.5em;'>{formatted_shares}</span> shares (R is <span style='font-size: 1em;'>{formatted_real_risk}</span>)</h3>", unsafe_allow_html=True)
+    try:
+        if stop_loss_price >= buy_price:
+            st.error("For Long Trades, the Stop Loss Price must be below the Entry Price. Please adjust your Stop Loss or Entry Price.")
+            return
+        
+        real_shares = calculate_shares(risk_amount, buy_price, stop_loss_price, rounding_method, "Long")
+        stop_loss_distance = abs(buy_price - stop_loss_price)
+        real_risk = real_shares * stop_loss_distance
+        formatted_shares = "{:,}".format(int(real_shares))
+        formatted_real_risk = "${:,.2f}".format(real_risk)  # Formatting real risk for display
+        st.markdown(f"<h3 style='text-align: left; color: #56b0f0;'>You should buy <span style='font-size: 1.5em;'>{formatted_shares}</span> shares (R is <span style='font-size: 1em;'>{formatted_real_risk}</span>)</h3>", unsafe_allow_html=True)
+    
+    except ValueError as e:
+        st.error(str(e))
 
 def display_initial_shares_short():
     try:
-        real_shares_short = calculate_shares(risk_amount_short, entry_price_short, stop_loss_price_short, rounding_method, "Short")
-        if real_shares_short is None:
-            st.error("Invalid calculation: Stop Loss Price cannot be equal to Entry Price for Short Trades.")
+        if stop_loss_price_short <= entry_price_short:
+            st.error("For Short Trades, the Stop Loss Price must be above the Entry Price. Please adjust your Stop Loss or Entry Price.")
             return
+        real_shares_short = calculate_shares(risk_amount_short, entry_price_short, stop_loss_price_short, rounding_method, "Short")
         stop_loss_distance_short = stop_loss_price_short - entry_price_short
         real_risk_short = real_shares_short * abs(stop_loss_distance_short)
         formatted_shares_short = "{:,}".format(int(real_shares_short))
@@ -80,6 +88,7 @@ def display_initial_shares_short():
         st.markdown(f"<h3 style='text-align: left; color: #56b0f0;'>You should sell short <span style='font-size: 1.5em;'>{formatted_shares_short}</span> shares (R is <span style='font-size: 1em;'>{formatted_real_risk_short}</span>)</h3>", unsafe_allow_html=True)
     except ValueError as e:
         st.error(str(e))
+
 
 # Main section for initial position sizing
 st.markdown("""
