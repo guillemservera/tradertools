@@ -91,7 +91,7 @@ def display_initial_shares_short():
 
 
 # Warning message in the sidebar
-st.sidebar.warning("Tip: Use arrow keys (↑↓) to quickly adjust number inputs.")
+st.sidebar.warning("Tip: Use keyboard arrow keys (↑↓) to quickly adjust number inputs.")
 
 
 # Main section for initial position sizing
