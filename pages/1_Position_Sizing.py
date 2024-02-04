@@ -172,7 +172,7 @@ with tab2:
         stop_loss_price_short = st.number_input("Stop Loss Price ($):", min_value=0.01, value=1.10, format="%.2f", key="stop_loss_price_short")
 
     with col4:
-        entry_price_short = st.number_input("Entry Price ($):", min_value=0.01, value=1.05, format="%.2f", key="entry_price_short")
+        entry_price_short = st.number_input("Entry Price ($):", min_value=0.01, value=1.00, format="%.2f", key="entry_price_short")
 
     # Show R size for Short Trades
     formatted_risk_amount_short = "${:,.2f}".format(risk_amount_short)
