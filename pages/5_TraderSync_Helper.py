@@ -171,3 +171,10 @@ if apply_button and trade_data:
     results = main(trade_data_file)
     # Pass a unique key for the pasted data's results
     display_results_and_download_button(results, key="pasted_data_results_text_area")
+
+# Disclaimer
+st.markdown("""
+    #     
+    ---
+    *This tool is intended for educational purposes only and its results should not be considered as investment advice.*
+""")

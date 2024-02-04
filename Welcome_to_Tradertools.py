@@ -41,3 +41,8 @@ st.markdown("""
     Developed by [Guillem Servera](https://twitter.com/guillemservera)
 """)
 
+# Disclaimer
+st.markdown("""    
+    ---
+    *This tool is intended for educational purposes only and its results should not be considered as investment advice.*
+""")

@@ -229,6 +229,8 @@ st.divider()
 broker_options = ["E*Trade Web Alerts", "Power E*Trade Web App"]
 broker = st.selectbox("Choose your broker", broker_options, index=0)
 
+st.divider()
+
 # Condición para mostrar diferentes interfaces según el bróker seleccionado
 if broker == "E*Trade Web Alerts":
     # La interfaz actual para E*Trade Web Alerts
@@ -254,3 +256,12 @@ if broker == "Power E*Trade Web App":
     if uploaded_file is not None:
         results = process_power_etrade_csv(uploaded_file)
         display_results_and_download_button(results, key="power_etrade_results_text_area")
+
+
+
+# Disclaimer
+st.markdown("""
+    #     
+    ---
+    *This tool is intended for educational purposes only and its results should not be considered as investment advice.*
+""")
